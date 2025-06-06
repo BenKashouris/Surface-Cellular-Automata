@@ -1,13 +1,17 @@
-from typing import Tuple, List, Callable
+from typing import Tuple, List
 from Icosphere_Mesh_data import Icosphere
 from pygame import Vector3
+import random
+from collections import defaultdict
+
+
 class AutomataCell:
-    def __init__(self, face_verts: Tuple[Vector3], color=(1, 0.5, 0)):
+    def __init__(self, face_verts: Tuple[Vector3], *, color=(0, 0, 0), value: float = 0):
         
         self.face_verts = face_verts
         self.color: Tuple[float, float, float] = color
 
-        self.value: float = 0
+        self.value: float = value
         self.next_value: float = 0
         self.neighbours = []
 
@@ -28,6 +32,15 @@ class AutomataCell:
 
     def get_verts(self):
         return self.face_verts
+    
+    def __str__(self):
+        return f"""
+Value: {self.value}
+Color: {self.color}
+Vert1: {self.face_verts[0]}
+Vert2: {self.face_verts[1]}
+Vert3: {self.face_verts[2]}
+"""
 
 
 class Engine:
@@ -35,21 +48,24 @@ class Engine:
     then running the engine and sending to opengl"""
 
     def __init__(self, mesh):
-        self.cells = [AutomataCell(face, None) for face in mesh.get_faces()]
+        self.cells = [AutomataCell(face, value = random.randint(0, 1)) for face in mesh.get_faces()]
 
         ## Calculating neighbours
-        vert_to_cell = {} ## Dictionary that assoicaties a verticies to all the cells that contain it
+        vert_to_cell = defaultdict(list) ## Dictionary that assoicaties a verticies to all the cells that contain it
         for cell in self.cells:
             for vert in cell.get_verts():
-                ## assoicative this vert to this cell
-                vert_id = str(vert)
-                current_value = vert_to_cell.get(vert_id, []) 
-                vert_to_cell[vert_id] = current_value + [cell]
+                vert_to_cell[str(vert)].append(cell)
 
+        cell_to_adjacent_cells = defaultdict(list)
         for vert in vert_to_cell.keys(): ## Loop througth all the vericies
             for cell in vert_to_cell[vert]:  ## Loop througth all cells assoicatied to that verticies
-                cell.set_neighbours([e for e in vert_to_cell[vert] if e != cell])
-                 ## Tell that verticies that it is neighbour to all other vertices associated to that vert
+                #cell_to_adjacent_cells[cell].extend([e for e in vert_to_cell[vert] if e != cell])
+                cell_to_adjacent_cells[cell].extend(vert_to_cell[vert])
+
+        for cell in self.cells: ## Set the neighbours to be those that share exactly 2 vertexs
+            neighbours = cell_to_adjacent_cells[cell]
+            cell.set_neighbours(list(set(filter(lambda x: neighbours.count(x) == 2, neighbours))))
+
         ## Order neighbours - To do
 
     def calc_next_state(self):
@@ -62,3 +78,8 @@ class Engine:
 
     def get_cells(self):
         return self.cells
+
+if __name__ == "__main__":
+    from Icosphere_Mesh_data import Icosphere
+    x = Engine(Icosphere(3))
+    print(x.cells[10].neighbours)
