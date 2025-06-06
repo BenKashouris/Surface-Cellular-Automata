@@ -26,13 +26,13 @@ class Icosphere():
     def __init__(self, number_of_subdivides: int):
         self.faces = []
         for i in range(20):
-            self.subdivide(self.icosahedron[self.icoindices[i][0]],
+            self._subdivide(self.icosahedron[self.icoindices[i][0]],
                            self.icosahedron[self.icoindices[i][1]],
                            self.icosahedron[self.icoindices[i][2]], number_of_subdivides)            
 
     def _subdivide(self, v1: Vector3, v2: Vector3, v3: Vector3, depth: int):
         if depth == 0:
-            self.make_face(v1, v2, v3)
+            self._make_face(v1, v2, v3)
             return
 
         v12 = v1 + v2
@@ -43,10 +43,10 @@ class Icosphere():
         v23 = v23.normalize()
         v31 = v31.normalize()
 
-        self.subdivide(v1, v12, v31, depth - 1)
-        self.subdivide(v2, v23, v12, depth - 1)
-        self.subdivide(v3, v31, v23, depth - 1)
-        self.subdivide(v12, v23, v31, depth - 1)
+        self._subdivide(v1, v12, v31, depth - 1)
+        self._subdivide(v2, v23, v12, depth - 1)
+        self._subdivide(v3, v31, v23, depth - 1)
+        self._subdivide(v12, v23, v31, depth - 1)
 
     def _make_face(self, v1, v2, v3):
        self.faces.append((v1, v2, v3))
