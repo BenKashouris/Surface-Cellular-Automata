@@ -5,20 +5,21 @@ from pygame.locals import DOUBLEBUF, OPENGL, QUIT
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-import Icosphere_Mesh_data
+import Mesh_data
 import Automata_Engine
 
 import numpy as np
-# --- Configuration ---
+
+# Config ----------------
 DISPLAY_SIZE = (800, 600)
 FOV = 45
 Z_NEAR = 0.1
 Z_FAR = 50.0
-CAMERA_DISTANCE = -5
+CAMERA_DISTANCE = -15
 ROTATION_SPEED = 0.5
 FRAME_DELAY_MS = 10
-AUTOMATA_UPDATE_INTERVAL = 2.5  # seconds
-PROJECT = True
+AUTOMATA_UPDATE_INTERVAL = 0.5  # seconds
+PROJECT = False
 
 
 def init_pygame():
@@ -42,16 +43,31 @@ def draw_automata(automata):
         glColor3f(*face.color)
         for vertex in face.get_verts():
             if PROJECT:
-                pass
+                glVertex3fv((vertex.x, vertex.y, vertex.z))
             else:
                 glVertex3fv((vertex.x, vertex.y, vertex.z))
     glEnd()
+
+def display_debug_faces(automata):
+    import colorsys
+    import random
+    n = len(automata.cells)
+    for i, cell in enumerate(automata.cells):
+        r, g, b = colorsys.hsv_to_rgb(random.random(), 1, 1)
+        cell.set_color(r, g, b)
+    for i in range(1000):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        draw_automata(automata)
+        glRotatef(ROTATION_SPEED, 3, 1, 1)
+        pygame.display.flip()
+        pygame.time.wait(FRAME_DELAY_MS)
 
 def main():
     init_pygame()
     init_opengl()
 
-    mesh = Icosphere_Mesh_data.Icosphere(3)
+    #mesh = Mesh_data.Icosphere(3).get_faces()
+    mesh = Mesh_data.get_toros_faces()
     automata = Automata_Engine.Engine(mesh)
 
     last_update_time = time.time() - AUTOMATA_UPDATE_INTERVAL # Force a draw asap
