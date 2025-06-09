@@ -112,7 +112,7 @@ class Engine:
 
 
 if __name__ == "__main__":
-    from Mesh_data import Icosphere, get_toros_faces
+    from MeshData import Icosphere, get_toros_faces
     automata = Engine(Icosphere(3).get_faces())
     assert all(len(cell.neighbours) == 3 for cell in automata.cells)
 

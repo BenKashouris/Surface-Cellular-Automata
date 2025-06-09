@@ -5,7 +5,7 @@ from pygame.locals import DOUBLEBUF, OPENGL, QUIT
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-import Mesh_data
+import MeshData
 import Automata_Engine
 
 import numpy as np
@@ -66,8 +66,8 @@ def main():
     init_pygame()
     init_opengl()
 
-    #mesh = Mesh_data.Icosphere(3).get_faces()
-    mesh = Mesh_data.get_toros_faces()
+    #mesh = MeshData.Icosphere(3).get_faces()
+    mesh = MeshData.get_toros_faces()
     automata = Automata_Engine.Engine(mesh)
 
     last_update_time = time.time() - AUTOMATA_UPDATE_INTERVAL # Force a draw asap
