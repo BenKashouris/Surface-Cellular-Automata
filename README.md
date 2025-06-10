@@ -1,6 +1,10 @@
 # Surface-Cellular-Automata
 On Cellular Automata engine on a 3d surface
 
+Probably getting projection errors when a vertex is shared between two faces
+Need to work out when to seperate these vertex
+There is a one to one mapping from the 3d triangle to the 2d triangle
+this means that we have to make a one to many mapping for some vertexs
 
 To Do:
 Refactor Main /
