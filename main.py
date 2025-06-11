@@ -5,10 +5,12 @@ from pygame.locals import DOUBLEBUF, OPENGL, QUIT
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-import Icosphere_Mesh_data
+import MeshData
 import Automata_Engine
 
-# --- Configuration ---
+import numpy as np
+
+# Config ----------------
 DISPLAY_SIZE = (800, 600)
 FOV = 45
 Z_NEAR = 0.1
@@ -16,19 +18,18 @@ Z_FAR = 50.0
 CAMERA_DISTANCE = -5
 ROTATION_SPEED = 0.5
 FRAME_DELAY_MS = 10
-AUTOMATA_UPDATE_INTERVAL = 2.5  # seconds
+AUTOMATA_UPDATE_INTERVAL = 0.5  # seconds
+PROJECT = True
 
 
 def init_pygame():
     pygame.init()
     pygame.display.set_mode(DISPLAY_SIZE, DOUBLEBUF | OPENGL)
 
-
 def init_opengl():
     gluPerspective(FOV, DISPLAY_SIZE[0] / DISPLAY_SIZE[1], Z_NEAR, Z_FAR)
     glTranslatef(0.0, 0.0, CAMERA_DISTANCE)
     glEnable(GL_DEPTH_TEST)
-
 
 def handle_events():
     for event in pygame.event.get():
@@ -36,40 +37,73 @@ def handle_events():
             pygame.quit()
             exit()
 
-
-def draw_automata(automata):
+def draw_automata(automata, projection_map = None):
     glBegin(GL_TRIANGLES)
     for face in automata.get_cells():
         glColor3f(*face.color)
-        for vertex in face.get_verts():
+        verts = face.get_verts() if not PROJECT else map(lambda vec: pygame.math.Vector3(vec.x, vec.y, 0), projection_map[face])
+        for vertex in verts:
             glVertex3fv((vertex.x, vertex.y, vertex.z))
     glEnd()
 
+def display_debug_faces(automata, projection_map):
+    import colorsys
+    import random
+    n = len(automata.cells)
+
+    ## Show neighbours
+    for i in range(0, n, 200):
+        automata.cells[i].set_color(1, 0, 0)
+        for j in range(3):
+            automata.cells[i].neighbours[j].set_color(0, 1, 0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            draw_automata(automata, projection_map)
+            glRotatef(ROTATION_SPEED, 3, 1, 1)
+            pygame.display.flip()
+            pygame.time.wait(1000)
+
+    ### Show all faces colored
+    for i, cell in enumerate(automata.cells):
+        r, g, b = colorsys.hsv_to_rgb(random.random(), 1, 1)
+        cell.set_color(r, g, b)
+    for i in range(1000):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        draw_automata(automata, projection_map)
+        if not PROJECT: glRotatef(ROTATION_SPEED, 3, 1, 1)
+        pygame.display.flip()
+        pygame.time.wait(FRAME_DELAY_MS)
 
 def main():
+    global PROJECT
     init_pygame()
     init_opengl()
 
-    glRotatef(-1, 3, 1, 1)  # Initial rotation
-
-    mesh = Icosphere_Mesh_data.Icosphere(3)
+    #mesh = MeshData.Icosphere(3).get_faces()
+    mesh = MeshData.get_toros_faces()
     automata = Automata_Engine.Engine(mesh)
+    print(len(automata.cells))
+    projection_map = automata.get_projection_map()
 
+    display_debug_faces(automata, projection_map)
+
+    frame = 0
     last_update_time = time.time() - AUTOMATA_UPDATE_INTERVAL # Force a draw asap
-
     while True:
+        frame += 1
         handle_events()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glRotatef(ROTATION_SPEED, 3, 1, 1)
+        if not PROJECT: glRotatef(ROTATION_SPEED, 3, 1, 1)
 
-        draw_automata(automata)
+        draw_automata(automata, projection_map)
 
         current_time = time.time()
         if current_time - last_update_time >= AUTOMATA_UPDATE_INTERVAL:
             automata.calc_next_state()
             automata.update_state()
             last_update_time = current_time
+        if (frame % 500) == 0:
+            PROJECT = not PROJECT
 
         pygame.display.flip()
         pygame.time.wait(FRAME_DELAY_MS)
