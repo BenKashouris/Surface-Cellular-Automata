@@ -41,27 +41,23 @@ def draw_automata(automata, projection_map = None):
     glBegin(GL_TRIANGLES)
     for face in automata.get_cells():
         glColor3f(*face.color)
-        if not all(map(lambda x: tuple(x) in projection_map, face.get_verts())): continue
-        for vertex in face.get_verts():
-            if PROJECT:
-                x, y = projection_map[tuple(vertex)]
-                glVertex3fv((x, y, 0))
-            else:
-                glVertex3fv((vertex.x, vertex.y, vertex.z))
+        verts = face.get_verts() if not PROJECT else map(lambda vec: pygame.math.Vector3(vec.x, vec.y, 0), projection_map[face])
+        for vertex in verts:
+            glVertex3fv((vertex.x, vertex.y, vertex.z))
     glEnd()
 
-def display_debug_faces(automata):
+def display_debug_faces(automata, projection_map):
     import colorsys
     import random
     n = len(automata.cells)
 
-    ### Show neighbours
+    ## Show neighbours
     for i in range(0, n, 200):
         automata.cells[i].set_color(1, 0, 0)
         for j in range(3):
             automata.cells[i].neighbours[j].set_color(0, 1, 0)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            draw_automata(automata)
+            draw_automata(automata, projection_map)
             glRotatef(ROTATION_SPEED, 3, 1, 1)
             pygame.display.flip()
             pygame.time.wait(1000)
@@ -72,24 +68,28 @@ def display_debug_faces(automata):
         cell.set_color(r, g, b)
     for i in range(1000):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        draw_automata(automata)
-        glRotatef(ROTATION_SPEED, 3, 1, 1)
+        draw_automata(automata, projection_map)
+        if not PROJECT: glRotatef(ROTATION_SPEED, 3, 1, 1)
         pygame.display.flip()
         pygame.time.wait(FRAME_DELAY_MS)
 
 def main():
+    global PROJECT
     init_pygame()
     init_opengl()
 
-    mesh = MeshData.Icosphere(1).get_faces()
-    #mesh = MeshData.get_toros_faces()
+    #mesh = MeshData.Icosphere(3).get_faces()
+    mesh = MeshData.get_toros_faces()
     automata = Automata_Engine.Engine(mesh)
-
+    print(len(automata.cells))
     projection_map = automata.get_projection_map()
-    #display_debug_faces(automata)
 
+    display_debug_faces(automata, projection_map)
+
+    frame = 0
     last_update_time = time.time() - AUTOMATA_UPDATE_INTERVAL # Force a draw asap
     while True:
+        frame += 1
         handle_events()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -102,6 +102,8 @@ def main():
             automata.calc_next_state()
             automata.update_state()
             last_update_time = current_time
+        if (frame % 500) == 0:
+            PROJECT = not PROJECT
 
         pygame.display.flip()
         pygame.time.wait(FRAME_DELAY_MS)

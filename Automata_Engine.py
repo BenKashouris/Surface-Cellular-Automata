@@ -82,12 +82,12 @@ class Engine:
             cell.set_neighbours(list(set(filter(lambda x: neighbours.count(x) == 2, neighbours))))
 
         ## Ordering the neighbours
-        for cell in self.cells:
-            neighbour_to_projected_point = {} ## neighbour to its point projected into the plane defined by the cell
-            for neighbour in cell.neighbours:
-                neighbour_to_projected_point[neighbour] = proj_point(neighbour.centroid, cell.centroid, cell.normal)
-            right = proj_point(get_right(cell.centroid), cell.centroid, cell.normal)
-            cell.neighbours.sort(key = lambda p: neighbour_to_projected_point[p].angle_to(right))
+        # for cell in self.cells:
+        #     neighbour_to_projected_point = {} ## neighbour to its point projected into the plane defined by the cell
+        #     for neighbour in cell.neighbours:
+        #         neighbour_to_projected_point[neighbour] = proj_point(neighbour.centroid, cell.centroid, cell.normal)
+        #     right = proj_point(get_right(cell.centroid), cell.centroid, cell.normal)
+        #     cell.neighbours.sort(key = lambda p: neighbour_to_projected_point[p].angle_to(right))
 
     def calc_next_state(self):
         for cell in self.cells:
@@ -100,27 +100,42 @@ class Engine:
     def get_cells(self):
         return self.cells
     
-    def get_projection_map(self) -> Dict[Vector3, Vector2]:
+    def get_projection_map(self) -> Dict[AutomataCell, Tuple[Vector2, Vector2, Vector2]]:
         root = self.cells[0]
         tree = self._build_spanning_tree(root)
-        self.projection = {}
-        for i, vert in enumerate(root.get_verts()): ## Place the root on the 2d grid
-            self.projection[tuple(vert)] = (Vector2(0, 0), Vector2(0.1, 0), Vector2(0.05, SQRT3/20))[i]
+        self.projection = {root: (Vector2(0, 0), Vector2(0.1, 0), Vector2(0.05, SQRT3/20))}
         self._traverse_and_place(tree, root)
         return self.projection
-
+    
     def _traverse_and_place(self, tree, current):
+        parent_verts_3d = current.get_verts()
+        parent_verts_2d = self.projection[current]
+
         for child, shared_edge in tree[current]:
-            P1_3d, P2_3d = shared_edge
+            child_verts_3d = child.get_verts()
 
-            P1, P2 = self.projection[tuple(P1_3d)], self.projection[tuple(P2_3d)]
-            P3 = self._calc_3d_vector(P1, P2, True)
-            if P3 in self.projection.values():
-                P3 = self._calc_3d_vector(P1, P2, False)
+            # Find shared vertices in current and child
+            i1 = parent_verts_3d.index(shared_edge[0])
+            i2 = parent_verts_3d.index(shared_edge[1])
+            P1, P2 = parent_verts_2d[i1], parent_verts_2d[i2]
 
-            point_to_project = list(filter(lambda x: not x in shared_edge, child.get_verts()))[0]
-            self.projection[tuple(point_to_project)] = P3
+            # Find the third vertex in the child
+            third_3d = next(filter(lambda x: not x in shared_edge, child_verts_3d)) ## We find the third 3d vertex since we already know the other two are the shared verts
+            first_shared_index = child_verts_3d.index(shared_edge[0])
+            third_index = child_verts_3d.index(third_3d)
+            P3 = self._calc_3d_vector(P1, P2, (third_index - first_shared_index) % 3 == 1) # is the third edge in the postive or negative direction in 3d
 
+            # Determine order in child
+            ordered = [None] * 3
+            for i, v in enumerate(child_verts_3d):
+                if v == shared_edge[0]:
+                    ordered[i] = P1
+                elif v == shared_edge[1]:
+                    ordered[i] = P2
+                else:
+                    ordered[i] = P3
+
+            self.projection[child] = tuple(ordered)
             self._traverse_and_place(tree, child)
     
     def _calc_3d_vector(self, P1: Vector2, P2: Vector2, clockwise: bool):
