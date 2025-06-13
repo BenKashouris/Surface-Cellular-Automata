@@ -66,6 +66,7 @@ class CellularAutomataRenderer:
         self.project = True
         self.automata_update_interval = 0.5
         self.last_update_time = time.time() - self.automata_update_interval
+        self.off_color, self.on_color = (0, 0, 0), (0, 0, 0)
 
         self.mesh = MeshData.get_toros_faces()
         self.automata = Automata_Engine.Engine(self.mesh)
@@ -90,7 +91,8 @@ class CellularAutomataRenderer:
         """Draws automaton mesh as triangles."""
         glBegin(GL_TRIANGLES)
         for face in self.automata.get_cells():
-            glColor3f(*face.color)
+            color = self.off_color if face.value == 0 else self.on_color
+            glColor3f(*color)
             verts = face.get_verts() if not self.project else map(
                 lambda vec: pygame.math.Vector3(vec.x, vec.y, 0), self.projection_map[face])
             for vertex in verts:
@@ -109,6 +111,8 @@ class CellularAutomataRenderer:
 
         self.project = state["project"]
         self.automata_update_interval = state["delay"]
+        self.off_color = state["off_color"]
+        self.on_color = state["on_color"]
 
     def handle_mouse_motion(self, rel: tuple[int, int], buttons: tuple[bool, bool, bool]):
         """Handles mouse motion"""
@@ -126,8 +130,8 @@ class ControlPanel:
         self.imgui_renderer = PygameRenderer()
         imgui.get_io().ini_file_name = None
 
-        self.changes: Dict[str, bool] = {"project": False, "delay": False}
-        self.state: Dict[str, Any] = {"project": True, "delay": 0.5}
+        self.changes: Dict[str, bool] = {"project": False, "delay": False, "off_color": False, "on_color": False}
+        self.state: Dict[str, Any] = {"project": True, "delay": 0.5, "on_color": (1, 1, 1), "off_color": (0, 0, 0)}
 
     def get_changes(self) -> Dict[str, bool]:
         """Returns flags indicating which control values changed."""
@@ -146,6 +150,8 @@ class ControlPanel:
         imgui.begin("Controls")
         self.changes["project"], self.state["project"] = imgui.checkbox("Enable Projection", self.state["project"])
         self.changes["delay"], self.state["delay"] = imgui.slider_float("Delay", self.state["delay"], 0.0, 1.5)
+        self.changes["off_color"], self.state["off_color"] = imgui.color_edit3("Edit off color", *self.state["off_color"], flags=imgui.COLOR_EDIT_NO_INPUTS)
+        self.changes["on_color"], self.state["on_color"] = imgui.color_edit3("Edit on color", *self.state["on_color"], flags=imgui.COLOR_EDIT_NO_INPUTS)
         imgui.end()
 
     def render(self):

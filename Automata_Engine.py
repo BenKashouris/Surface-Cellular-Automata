@@ -20,9 +20,8 @@ def proj_point(p: Vector3, q: Vector3, n: Vector3):
     return p - proj_v
     
 class AutomataCell:
-    def __init__(self, face_verts: Tuple[Vector3], *, color=(0, 0, 0), value: float = 0):
+    def __init__(self, face_verts: Tuple[Vector3], *, value: float = 0):
         self.verts = face_verts
-        self.color: Tuple[float, float, float] = color
 
         self.value: float = value
         self.next_value: float = 0
@@ -35,9 +34,6 @@ class AutomataCell:
         if self.neighbours != []: raise RuntimeError("Neighbours already set")
         self.neighbours = neighbours
 
-    def set_color(self, r: float, g: float, b: float):
-        self.color = (r, g, b)
-
     def calc_next_value(self):
         n = sum(map(lambda p: p.value, self.neighbours))
         #self.next_value = (0, 0, self.value, not self.value)[n]
@@ -45,7 +41,6 @@ class AutomataCell:
 
     def update(self):
         self.value = self.next_value
-        self.set_color(self.value, self.value, self.value)
 
     def get_verts(self):
         return self.verts
