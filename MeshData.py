@@ -123,3 +123,30 @@ from pygame import Vector3
 def get_toros_faces():
     V, F = generate_torus_tri_mesh(Nu=10, Nv=10, R=3.0, r=1.0)
     return [(Vector3(*V[i]), Vector3(*V[j]), Vector3(*V[k])) for i, j, k in F]
+
+
+import trimesh
+def export_to_obj(faces, name):
+    out_verts = []
+    out_faces = []
+    for face in faces:
+        current_vert_id = []
+        for vert in face:
+            try:
+                current_vert_id.append(out_verts.index(vert))
+            except ValueError:
+                out_verts.append(vert)
+                current_vert_id.append(len(out_verts) - 1)
+        out_faces.append(current_vert_id)
+    mesh = trimesh.Trimesh(vertices=out_verts, faces=out_faces)
+
+    # Export to OBJ
+    mesh.export(name)
+
+if __name__ == "__main__":
+    #export_to_obj(Icosphere(2).get_faces(), 'Icosphere2.obj')
+    export_to_obj(Icosphere(3).get_faces(), 'Icosphere3.obj')
+    #export_to_obj(Icosphere(4).get_faces(), 'Icosphere4.obj')
+    #export_to_obj(Icosphere(5).get_faces(), 'Icosphere5.obj')
+
+    export_to_obj(get_toros_faces(), 'toros.obj')

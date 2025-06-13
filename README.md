@@ -1,6 +1,11 @@
 # Surface-Cellular-Automata
 On Cellular Automata engine on a 3d surface
 
+
+NEXT stuff
+Finish validate obj
+think about the default values of the state cellaurAutomataRender
+
 To do:
 Add button to swap projection mode on or off /
 Make the camera dragable and able to be zoomed in and out /

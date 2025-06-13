@@ -16,10 +16,10 @@ class Camera:
         glLoadIdentity()
         gluPerspective(self.fov, width / height, self.z_near, self.z_far)
         glMatrixMode(GL_MODELVIEW)
-        self.reset_view()
+        self.reset_orientation()
 
-    def reset_view(self) -> None:
-        """Resets the view transformation."""
+    def reset_orientation(self) -> None:
+        """Resets the view."""
         glLoadIdentity()
         glTranslatef(0.0, 0.0, self.distance)
 
