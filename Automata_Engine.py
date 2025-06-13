@@ -123,7 +123,7 @@ class Engine:
             third_3d = next(filter(lambda x: not x in shared_edge, child_verts_3d)) ## We find the third 3d vertex since we already know the other two are the shared verts
             first_shared_index = child_verts_3d.index(shared_edge[0])
             third_index = child_verts_3d.index(third_3d)
-            P3 = self._calc_3d_vector(P1, P2, (third_index - first_shared_index) % 3 == 1) # is the third edge in the postive or negative direction in 3d
+            P3 = self._calc_3d_vector(P1, P2, (third_index - first_shared_index) % 3 == 1) # is the third edge in the postive or negative direction given we have forced a anti-clockwise ordering
 
             # Determine order in child
             ordered = [None] * 3
