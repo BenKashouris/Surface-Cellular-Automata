@@ -1,113 +1,163 @@
 import time
 import pygame
 from pygame.locals import DOUBLEBUF, OPENGL, QUIT
-
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from typing import List, Dict, Any
+import math
 
 import MeshData
 import Automata_Engine
+from Camera import Camera, OrbitalCamera
 
-import numpy as np
+import imgui
+from imgui.integrations.pygame import PygameRenderer
 
 # Config ----------------
 DISPLAY_SIZE = (800, 600)
-FOV = 45
-Z_NEAR = 0.1
-Z_FAR = 50.0
-CAMERA_DISTANCE = -5
-ROTATION_SPEED = 0.5
 FRAME_DELAY_MS = 10
-AUTOMATA_UPDATE_INTERVAL = 0.5  # seconds
-PROJECT = True
+ZOOM_SENSTIVITY = 0.5
 
 
-def init_pygame():
-    pygame.init()
-    pygame.display.set_mode(DISPLAY_SIZE, DOUBLEBUF | OPENGL)
+class App:
+    """Main application class that manages the event loop and rendering pipeline."""
+    def __init__(self):
+        pygame.init()
+        pygame.display.set_mode(DISPLAY_SIZE, DOUBLEBUF | OPENGL)
 
-def init_opengl():
-    gluPerspective(FOV, DISPLAY_SIZE[0] / DISPLAY_SIZE[1], Z_NEAR, Z_FAR)
-    glTranslatef(0.0, 0.0, CAMERA_DISTANCE)
-    glEnable(GL_DEPTH_TEST)
+        self.cellular_automata_renderer = CellularAutomataRenderer()
+        self.control_panel = ControlPanel() 
 
-def handle_events():
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            exit()
+    def run(self):
+        """Runs the main application loop, handling input, updates, and rendering."""
+        while True:
+            self.handle_events()
+            self.render()
+            self.handle_UI_changes()
 
-def draw_automata(automata, projection_map = None):
-    glBegin(GL_TRIANGLES)
-    for face in automata.get_cells():
-        glColor3f(*face.color)
-        verts = face.get_verts() if not PROJECT else map(lambda vec: pygame.math.Vector3(vec.x, vec.y, 0), projection_map[face])
-        for vertex in verts:
-            glVertex3fv((vertex.x, vertex.y, vertex.z))
-    glEnd()
+    def handle_UI_changes(self):
+        """Applies user-changed settings from the UI to the automaton renderer."""
+        self.cellular_automata_renderer.update_state(self.control_panel.get_changes(), self.control_panel.get_state())
 
-def display_debug_faces(automata, projection_map):
-    import colorsys
-    import random
-    n = len(automata.cells)
-
-    ## Show neighbours
-    for i in range(0, n, 200):
-        automata.cells[i].set_color(1, 0, 0)
-        for j in range(3):
-            automata.cells[i].neighbours[j].set_color(0, 1, 0)
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            draw_automata(automata, projection_map)
-            glRotatef(ROTATION_SPEED, 3, 1, 1)
-            pygame.display.flip()
-            pygame.time.wait(1000)
-
-    ### Show all faces colored
-    for i, cell in enumerate(automata.cells):
-        r, g, b = colorsys.hsv_to_rgb(random.random(), 1, 1)
-        cell.set_color(r, g, b)
-    for i in range(1000):
+    def render(self):
+        """Clears the screen and draws the automaton and control panel panel."""
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        draw_automata(automata, projection_map)
-        if not PROJECT: glRotatef(ROTATION_SPEED, 3, 1, 1)
+        self.cellular_automata_renderer.render()
+        self.control_panel.render()
         pygame.display.flip()
         pygame.time.wait(FRAME_DELAY_MS)
 
-def main():
-    global PROJECT
-    init_pygame()
-    init_opengl()
+    def handle_events(self):
+        """Handles window events and delegates UI interaction to the control panel."""
+        for event in pygame.event.get():
+            self.control_panel.handle_event(event)
+            if event.type == QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEMOTION:
+                self.cellular_automata_renderer.handle_mouse_motion(event.rel, pygame.mouse.get_pressed())
+            if event.type == pygame.MOUSEWHEEL:
+                self.cellular_automata_renderer.handle_mouse_wheel(event.y)
 
-    #mesh = MeshData.Icosphere(3).get_faces()
-    mesh = MeshData.get_toros_faces()
-    automata = Automata_Engine.Engine(mesh)
-    print(len(automata.cells))
-    projection_map = automata.get_projection_map()
 
-    display_debug_faces(automata, projection_map)
+class CellularAutomataRenderer:
+    """Handles rendering and simulation of the cellular automaton."""
+    def __init__(self):
+        self.project = True
+        self.automata_update_interval = 0.5
+        self.last_update_time = time.time() - self.automata_update_interval
 
-    frame = 0
-    last_update_time = time.time() - AUTOMATA_UPDATE_INTERVAL # Force a draw asap
-    while True:
-        frame += 1
-        handle_events()
+        self.mesh = MeshData.get_toros_faces()
+        self.automata = Automata_Engine.Engine(self.mesh)
+        self.projection_map = self.automata.get_projection_map()
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        if not PROJECT: glRotatef(ROTATION_SPEED, 3, 1, 1)
+        self.camera = OrbitalCamera()
+        
+        self.camera.setup_camera_view(DISPLAY_SIZE[0], DISPLAY_SIZE[1])
+        glEnable(GL_DEPTH_TEST)
 
-        draw_automata(automata, projection_map)
+    def render(self):
+        """Updates the automaton if necessary and draws the mesh."""
+        self.camera.apply_view()
+        current_time = time.time() # If we have waited the interval then update the automata
+        if current_time - self.last_update_time >= self.automata_update_interval:
+            self.automata.calc_next_state()
+            self.automata.update_state()
+            self.last_update_time = current_time
+        self.draw()
 
-        current_time = time.time()
-        if current_time - last_update_time >= AUTOMATA_UPDATE_INTERVAL:
-            automata.calc_next_state()
-            automata.update_state()
-            last_update_time = current_time
-        if (frame % 500) == 0:
-            PROJECT = not PROJECT
+    def draw(self):
+        """Draws automaton mesh as triangles."""
+        glBegin(GL_TRIANGLES)
+        for face in self.automata.get_cells():
+            glColor3f(*face.color)
+            verts = face.get_verts() if not self.project else map(
+                lambda vec: pygame.math.Vector3(vec.x, vec.y, 0), self.projection_map[face])
+            for vertex in verts:
+                glVertex3fv((vertex.x, vertex.y, vertex.z))
+        glEnd()
 
-        pygame.display.flip()
-        pygame.time.wait(FRAME_DELAY_MS)
+    def update_state(self, changes, state):
+        """Applies control panel state changes to the renderer.
+
+        Args:
+            changes (Dict[str, bool]): Flags indicating which parameters changed.
+            state (Dict[str, Any]): New values from the GUI controls.
+        """
+        if changes["project"]:
+            self.camera.reset_view()
+
+        self.project = state["project"]
+        self.automata_update_interval = state["delay"]
+
+    def handle_mouse_motion(self, rel: tuple[int, int], buttons: tuple[bool, bool, bool]):
+        """Handles mouse motion"""
+        if buttons[0] and not self.project:  # Left click
+            self.camera.rotate(rel[0], rel[1])
+
+    def handle_mouse_wheel(self, y):
+        """Handles mouse wheel movement"""
+        self.camera.zoom(y * ZOOM_SENSTIVITY)
+
+class ControlPanel:
+    """ImGui control panel for interacting with automaton parameters."""
+    def __init__(self):
+        imgui.create_context()
+        self.imgui_renderer = PygameRenderer()
+        imgui.get_io().ini_file_name = None
+
+        self.changes: Dict[str, bool] = {"project": False, "delay": False}
+        self.state: Dict[str, Any] = {"project": True, "delay": 0.5}
+
+    def get_changes(self) -> Dict[str, bool]:
+        """Returns flags indicating which control values changed."""
+        return self.changes
+
+    def get_state(self) -> Dict[str, Any]:
+        """Returns the current state of all control parameters."""
+        return self.state
+
+    def handle_event(self, event: pygame.event.Event):
+        """Passes Pygame input events to the ImGui renderer for UI interaction"""
+        self.imgui_renderer.process_event(event)
+
+    def draw(self):
+        """Builds, renders and gets states of the ImGui UI window with control widgets."""
+        imgui.begin("Controls")
+        self.changes["project"], self.state["project"] = imgui.checkbox("Enable Projection", self.state["project"])
+        self.changes["delay"], self.state["delay"] = imgui.slider_float("Delay", self.state["delay"], 0.0, 1.5)
+        imgui.end()
+
+    def render(self):
+        """Finalizes and renders the ImGui draw data to the screen."""
+        io = imgui.get_io()
+        io.display_size = pygame.display.get_surface().get_size()
+        imgui.new_frame()
+        self.draw()
+        imgui.render()
+        self.imgui_renderer.render(imgui.get_draw_data())
 
 
 if __name__ == "__main__":
-    main()
+    app = App()
+    app.run()
