@@ -4,10 +4,11 @@ from pygame.locals import DOUBLEBUF, OPENGL, QUIT
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from typing import List, Dict, Any
+import math
 
 import MeshData
 import Automata_Engine
-from Camera import Camera
+from Camera import Camera, OrbitalCamera
 
 import imgui
 from imgui.integrations.pygame import PygameRenderer
@@ -15,6 +16,7 @@ from imgui.integrations.pygame import PygameRenderer
 # Config ----------------
 DISPLAY_SIZE = (800, 600)
 FRAME_DELAY_MS = 10
+ZOOM_SENSTIVITY = 0.5
 
 
 class App:
@@ -52,13 +54,16 @@ class App:
             if event.type == QUIT:
                 pygame.quit()
                 exit()
+            if event.type == pygame.MOUSEMOTION:
+                self.cellular_automata_renderer.handle_mouse_motion(event.rel, pygame.mouse.get_pressed())
+            if event.type == pygame.MOUSEWHEEL:
+                self.cellular_automata_renderer.handle_mouse_wheel(event.y)
 
 
 class CellularAutomataRenderer:
     """Handles rendering and simulation of the cellular automaton."""
     def __init__(self):
         self.project = True
-        self.rotation_speed = 0.5
         self.automata_update_interval = 0.5
         self.last_update_time = time.time() - self.automata_update_interval
 
@@ -66,12 +71,14 @@ class CellularAutomataRenderer:
         self.automata = Automata_Engine.Engine(self.mesh)
         self.projection_map = self.automata.get_projection_map()
 
-        self.camera = Camera()
+        self.camera = OrbitalCamera()
+        
         self.camera.setup_camera_view(DISPLAY_SIZE[0], DISPLAY_SIZE[1])
         glEnable(GL_DEPTH_TEST)
 
     def render(self):
         """Updates the automaton if necessary and draws the mesh."""
+        self.camera.apply_view()
         current_time = time.time() # If we have waited the interval then update the automata
         if current_time - self.last_update_time >= self.automata_update_interval:
             self.automata.calc_next_state()
@@ -101,9 +108,16 @@ class CellularAutomataRenderer:
             self.camera.reset_view()
 
         self.project = state["project"]
-        self.rotation_speed = state["rotation_speed"]
         self.automata_update_interval = state["delay"]
 
+    def handle_mouse_motion(self, rel: tuple[int, int], buttons: tuple[bool, bool, bool]):
+        """Handles mouse motion"""
+        if buttons[0] and not self.project:  # Left click
+            self.camera.rotate(rel[0], rel[1])
+
+    def handle_mouse_wheel(self, y):
+        """Handles mouse wheel movement"""
+        self.camera.zoom(y * ZOOM_SENSTIVITY)
 
 class ControlPanel:
     """ImGui control panel for interacting with automaton parameters."""
@@ -111,9 +125,9 @@ class ControlPanel:
         imgui.create_context()
         self.imgui_renderer = PygameRenderer()
         imgui.get_io().ini_file_name = None
-        
-        self.changes: Dict[str, bool] = {"project": False, "rotation_speed": False, "delay": False}
-        self.state: Dict[str, Any] = {"project": True, "rotation_speed": 0.5, "delay": 0.5}
+
+        self.changes: Dict[str, bool] = {"project": False, "delay": False}
+        self.state: Dict[str, Any] = {"project": True, "delay": 0.5}
 
     def get_changes(self) -> Dict[str, bool]:
         """Returns flags indicating which control values changed."""
@@ -131,8 +145,7 @@ class ControlPanel:
         """Builds, renders and gets states of the ImGui UI window with control widgets."""
         imgui.begin("Controls")
         self.changes["project"], self.state["project"] = imgui.checkbox("Enable Projection", self.state["project"])
-        self.changes["rotation_speed"], self.state["rotation_speed"] = imgui.slider_float("Speed", self.state["rotation_speed"], 0.1, 5.0)
-        self.changes["delay"], self.state["delay"] = imgui.slider_float("Delay", self.state["delay"], 0.1, 1.5)
+        self.changes["delay"], self.state["delay"] = imgui.slider_float("Delay", self.state["delay"], 0.0, 1.5)
         imgui.end()
 
     def render(self):
