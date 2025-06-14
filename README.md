@@ -3,6 +3,7 @@ On Cellular Automata engine on a 3d surface
 
 
 NEXT stuff
+refactor main
 Finish validate obj
 think about the default values of the state cellaurAutomataRender
 docustring for automata engine
