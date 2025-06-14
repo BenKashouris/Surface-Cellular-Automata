@@ -6,10 +6,11 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from typing import List, Dict, Any
 import math
+import os
 
-import MeshData
-import Automata_Engine
-from Camera import Camera, OrbitalCamera
+import mesh_data
+import automata_engine
+from camera import Camera, OrbitalCamera
 
 import imgui
 from imgui.integrations.pygame import PygameRenderer
@@ -33,6 +34,9 @@ def load_obj(file_name: str) -> List[tuple[Vector3, Vector3, Vector3]]:
     mesh = trimesh.load_mesh(file_name)
     verts, faces_indexs = mesh.vertices, mesh.faces
     return [(Vector3(*verts[i]), Vector3(*verts[j]), Vector3(*verts[k])) for i, j, k in faces_indexs]
+
+project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+assest_root: str = os.path.join(project_root, 'assets')
 
 class App:
     """Main application class that manages the event loop and rendering pipeline."""
@@ -82,8 +86,8 @@ class CellularAutomataRenderer:
         self.off_color, self.on_color = (0, 0, 0), (0, 0, 0)
         self.last_update_time = -math.inf # Force a update asap
 
-        self.mesh = load_obj("toros.obj")
-        self.automata = Automata_Engine.Engine(self.mesh)
+        mesh = load_obj(os.path.join(assest_root, 'toros.obj'))
+        self.automata = automata_engine.Engine(mesh)
         self.projection_map = self.automata.get_projection_map()
 
         self.camera = OrbitalCamera()
