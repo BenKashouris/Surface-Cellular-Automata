@@ -5,7 +5,7 @@ On Cellular Automata engine on a 3d surface
 NEXT stuff
 Finish validate obj
 think about the default values of the state cellaurAutomataRender
-requirments.txt
+docustring for automata engine
 
 To do:
 Add button to add your own objects:

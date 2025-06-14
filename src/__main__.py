@@ -17,13 +17,22 @@ from imgui.integrations.pygame import PygameRenderer
 
 import trimesh
 
+from tkinter import filedialog, Tk
+
 # Config ----------------
 DISPLAY_SIZE = (800, 600)
 FRAME_DELAY_MS = 10
 ZOOM_SENSTIVITY = 0.5
-project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-assest_root: str = os.path.join(project_root, 'assets')
 
+
+# ##fix blurry file
+# try:
+#     ctypes.windll.shcore.SetProcessDpiAwareness(1)
+# except:
+#     try:
+#         ctypes.windll.user32.SetProcessDPIAware()
+#     except:
+#         pass
 
 def load_obj(file_name: str) -> List[tuple[Vector3, Vector3, Vector3]]:
     """Loads an OBJ file and converts it into a list of triangle faces.
@@ -38,14 +47,32 @@ def load_obj(file_name: str) -> List[tuple[Vector3, Vector3, Vector3]]:
     verts, faces_indexs = mesh.vertices, mesh.faces
     return [(Vector3(*verts[i]), Vector3(*verts[j]), Vector3(*verts[k])) for i, j, k in faces_indexs]
 
+def get_file_from_user(file_path: str) -> str:
+    """Opens a file dialog for the user to select a .obj file from the given directory.
+    Args:
+        file_path (str): The initial directory to open in the file dialog.
+    Returns:
+        str: The full path to the selected .obj file. Returns an empty string if the user cancels.
+    """
+    root = Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(title='Open a file', initialdir=file_path, filetypes=(('object file', '*.obj'),))
+    root.destroy()
+    return file_path
 
 class App:
     """Main application class that manages the event loop and rendering pipeline."""
     def __init__(self):
+        self.project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        self.assest_root: str = os.path.join(self.project_root, 'assets')
+
         pygame.init()
         pygame.display.set_mode(DISPLAY_SIZE, DOUBLEBUF | OPENGL)
 
-        self.cellular_automata_renderer = CellularAutomataRenderer()
+        mesh = load_obj(os.path.join(self.assest_root, 'toros10nu10nv0.33r.obj'))
+        print(len(mesh))
+
+        self.cellular_automata_renderer = CellularAutomataRenderer(mesh)
         self.control_panel = ControlPanel() 
 
     def run(self):
@@ -57,7 +84,15 @@ class App:
 
     def handle_UI_changes(self):
         """Applies user-changed settings from the UI to the automaton renderer."""
-        self.cellular_automata_renderer.update_state(self.control_panel.get_changes(), self.control_panel.get_state())
+        changes, state = self.control_panel.get_changes(), self.control_panel.get_state()
+        if changes["change_mesh"]: self.change_automata()
+        self.cellular_automata_renderer.update_state(changes, state)
+
+    def change_automata(self):
+        """Prompts the user to select a new `.obj` file and updates the cellular automata renderer."""
+        mesh = load_obj(os.path.join(self.assest_root, get_file_from_user(self.assest_root)))
+        if mesh == "": return #If the user cancels then stop
+        self.cellular_automata_renderer = CellularAutomataRenderer(mesh)
 
     def render(self):
         """Clears the screen and draws the automaton and control panel panel."""
@@ -82,14 +117,12 @@ class App:
 
 class CellularAutomataRenderer:
     """Handles rendering and simulation of the cellular automaton."""
-    def __init__(self):
+    def __init__(self, mesh):
         self.project = False
         self.automata_update_interval = 0
         self.off_color, self.on_color = (0, 0, 0), (0, 0, 0)
         self.last_update_time = -math.inf # Force a update asap
 
-        mesh = load_obj(os.path.join(assest_root, 'toros10nu10nv0.33r.obj'))
-        print(len(mesh))
         self.automata = automata_engine.Engine(mesh)
         self.projection_map = self.automata.get_projection_map()
 
@@ -150,7 +183,7 @@ class ControlPanel:
         self.imgui_renderer = PygameRenderer()
         imgui.get_io().ini_file_name = None
 
-        self.changes: Dict[str, bool] = {"project": False, "delay": False, "off_color": False, "on_color": False}
+        self.changes: Dict[str, bool] = {"project": False, "delay": False, "off_color": False, "on_color": False, "change_mesh": False}
         self.state: Dict[str, Any] = {"project": True, "delay": 0.5, "on_color": (1, 1, 1), "off_color": (0, 0, 0)}
 
     def get_changes(self) -> Dict[str, bool]:
@@ -172,6 +205,7 @@ class ControlPanel:
         self.changes["delay"], self.state["delay"] = imgui.slider_float("Delay", self.state["delay"], 0.0, 1.5)
         self.changes["off_color"], self.state["off_color"] = imgui.color_edit3("Edit off color", *self.state["off_color"], flags=imgui.COLOR_EDIT_NO_INPUTS)
         self.changes["on_color"], self.state["on_color"] = imgui.color_edit3("Edit on color", *self.state["on_color"], flags=imgui.COLOR_EDIT_NO_INPUTS)
+        self.changes["change_mesh"] = imgui.button("Change mesh")
         imgui.end()
 
     def render(self):
