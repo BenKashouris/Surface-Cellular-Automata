@@ -62,7 +62,7 @@ def _wrap_key(x, y, width, height, tol=1e-8):
     """Helper: wrap a point into the fundamental parallelogram and round."""
     return (round(x % width, 8), round(y % height, 8))
 
-def generate_torus_tri_mesh(Nu=20, Nv=20, R=3.0, r=1.0):
+def generate_torus_tri_mesh(Nu=20, Nv=20, R=1.0, r=0.2):
     # --- 1. Build a *flat* triangular lattice -----------------------------
     a      = 1.0                                # intrinsic edge length
     width  = Nu * a                             # span of the first lattice vector
@@ -120,8 +120,8 @@ def generate_torus_tri_mesh(Nu=20, Nv=20, R=3.0, r=1.0):
     return np.asarray(verts3d, dtype=float), np.asarray(faces, dtype=int)
 
 from pygame import Vector3
-def get_toros_faces():
-    V, F = generate_torus_tri_mesh(Nu=10, Nv=10, R=3.0, r=1.0)
+def get_toros_faces(Nu=10, Nv=10, R=1.0, r=0.2):
+    V, F = generate_torus_tri_mesh(Nu, Nv, R, r)
     return [(Vector3(*V[i]), Vector3(*V[j]), Vector3(*V[k])) for i, j, k in F]
 
 
@@ -144,9 +144,13 @@ def export_to_obj(faces, name):
     mesh.export(name)
 
 if __name__ == "__main__":
-    #export_to_obj(Icosphere(2).get_faces(), 'Icosphere2.obj')
-    export_to_obj(Icosphere(3).get_faces(), 'Icosphere3.obj')
-    #export_to_obj(Icosphere(4).get_faces(), 'Icosphere4.obj')
-    #export_to_obj(Icosphere(5).get_faces(), 'Icosphere5.obj')
+    # export_to_obj(Icosphere(2).get_faces(), 'Icosphere2.obj')
+    # export_to_obj(Icosphere(3).get_faces(), 'Icosphere3.obj')
+    # export_to_obj(Icosphere(4).get_faces(), 'Icosphere4.obj')
+    # export_to_obj(Icosphere(5).get_faces(), 'Icosphere5.obj')
 
-    export_to_obj(get_toros_faces(), 'toros.obj')
+    # export_to_obj(get_toros_faces(Nu=10, Nv=10, R=1.0, r=0.2), 'toros10nu10nv0.2r.obj')
+    # export_to_obj(get_toros_faces(Nu=20, Nv=20, R=1.0, r=0.2), 'toros20nu20nv0.2r.obj')
+
+    # export_to_obj(get_toros_faces(Nu=10, Nv=10, R=1.0, r=0.5), 'toros10nu10nv0.5r.obj')
+    export_to_obj(get_toros_faces(Nu=10, Nv=10, R=1.0, r=0.33333333), 'toros10nu10nv0.33r.obj')

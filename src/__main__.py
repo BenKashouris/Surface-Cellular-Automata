@@ -21,6 +21,9 @@ import trimesh
 DISPLAY_SIZE = (800, 600)
 FRAME_DELAY_MS = 10
 ZOOM_SENSTIVITY = 0.5
+project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+assest_root: str = os.path.join(project_root, 'assets')
+
 
 def load_obj(file_name: str) -> List[tuple[Vector3, Vector3, Vector3]]:
     """Loads an OBJ file and converts it into a list of triangle faces.
@@ -35,8 +38,6 @@ def load_obj(file_name: str) -> List[tuple[Vector3, Vector3, Vector3]]:
     verts, faces_indexs = mesh.vertices, mesh.faces
     return [(Vector3(*verts[i]), Vector3(*verts[j]), Vector3(*verts[k])) for i, j, k in faces_indexs]
 
-project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-assest_root: str = os.path.join(project_root, 'assets')
 
 class App:
     """Main application class that manages the event loop and rendering pipeline."""
@@ -78,6 +79,7 @@ class App:
             if event.type == pygame.MOUSEWHEEL:
                 self.cellular_automata_renderer.handle_mouse_wheel(event.y)
 
+
 class CellularAutomataRenderer:
     """Handles rendering and simulation of the cellular automaton."""
     def __init__(self):
@@ -86,7 +88,7 @@ class CellularAutomataRenderer:
         self.off_color, self.on_color = (0, 0, 0), (0, 0, 0)
         self.last_update_time = -math.inf # Force a update asap
 
-        mesh = load_obj(os.path.join(assest_root, 'toros.obj'))
+        mesh = load_obj(os.path.join(assest_root, 'toros10nu10nv0.33r.obj'))
         self.automata = automata_engine.Engine(mesh)
         self.projection_map = self.automata.get_projection_map()
 
@@ -138,6 +140,7 @@ class CellularAutomataRenderer:
     def handle_mouse_wheel(self, y):
         """Handles mouse wheel movement"""
         self.camera.zoom(y * ZOOM_SENSTIVITY)
+
 
 class ControlPanel:
     """ImGui control panel for interacting with automaton parameters."""

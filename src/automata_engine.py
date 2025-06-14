@@ -155,21 +155,3 @@ class Engine:
                     visited.add(neighbour)
                     queue.append(neighbour)
         return tree
-
-
-if __name__ == "__main__":
-    from MeshData import Icosphere, get_toros_faces
-    automata = Engine(Icosphere(3).get_faces())
-    assert all(len(cell.neighbours) == 3 for cell in automata.cells)
-
-    # automata.get_projection_map()
-    # stored_tree = {}
-    # print(automata.cells[0])
-    # for key, value in automata.tree.items():
-    #     stored_tree[str(key)] = list(map(str, value))
-    # import pickle
-    # with open("tree.data", "wb") as f:
-    #     pickle.dump(stored_tree, f)
-
-    # automata = Engine(get_toros_faces())
-    # assert all(len(cell.neighbours) == 3 for cell in automata.cells)
