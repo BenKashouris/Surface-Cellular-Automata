@@ -1,23 +1,42 @@
 import time
 import pygame
 from pygame.locals import DOUBLEBUF, OPENGL, QUIT
+from pygame import Vector3  
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from typing import List, Dict, Any
 import math
+import os
 
-import MeshData
-import Automata_Engine
-from Camera import Camera, OrbitalCamera
+import mesh_data
+import automata_engine
+from camera import Camera, OrbitalCamera
 
 import imgui
 from imgui.integrations.pygame import PygameRenderer
+
+import trimesh
 
 # Config ----------------
 DISPLAY_SIZE = (800, 600)
 FRAME_DELAY_MS = 10
 ZOOM_SENSTIVITY = 0.5
 
+def load_obj(file_name: str) -> List[tuple[Vector3, Vector3, Vector3]]:
+    """Loads an OBJ file and converts it into a list of triangle faces.
+    Args:
+        file_name (str): The path to the OBJ file to load.
+    Returns:
+        List[tuple[Vector3, Vector3, Vector3]]: A list of faces, where each face
+        is represented as a tuple of three Vector3 objects corresponding to the
+        triangle's vertices.
+    """
+    mesh = trimesh.load_mesh(file_name)
+    verts, faces_indexs = mesh.vertices, mesh.faces
+    return [(Vector3(*verts[i]), Vector3(*verts[j]), Vector3(*verts[k])) for i, j, k in faces_indexs]
+
+project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+assest_root: str = os.path.join(project_root, 'assets')
 
 class App:
     """Main application class that manages the event loop and rendering pipeline."""
@@ -59,21 +78,19 @@ class App:
             if event.type == pygame.MOUSEWHEEL:
                 self.cellular_automata_renderer.handle_mouse_wheel(event.y)
 
-
 class CellularAutomataRenderer:
     """Handles rendering and simulation of the cellular automaton."""
     def __init__(self):
-        self.project = True
-        self.automata_update_interval = 0.5
-        self.last_update_time = time.time() - self.automata_update_interval
+        self.project = False
+        self.automata_update_interval = 0
         self.off_color, self.on_color = (0, 0, 0), (0, 0, 0)
+        self.last_update_time = -math.inf # Force a update asap
 
-        self.mesh = MeshData.get_toros_faces()
-        self.automata = Automata_Engine.Engine(self.mesh)
+        mesh = load_obj(os.path.join(assest_root, 'toros.obj'))
+        self.automata = automata_engine.Engine(mesh)
         self.projection_map = self.automata.get_projection_map()
 
         self.camera = OrbitalCamera()
-        
         self.camera.setup_camera_view(DISPLAY_SIZE[0], DISPLAY_SIZE[1])
         glEnable(GL_DEPTH_TEST)
 
@@ -94,20 +111,19 @@ class CellularAutomataRenderer:
             color = self.off_color if face.value == 0 else self.on_color
             glColor3f(*color)
             verts = face.get_verts() if not self.project else map(
-                lambda vec: pygame.math.Vector3(vec.x, vec.y, 0), self.projection_map[face])
+                lambda vec: Vector3(vec.x, vec.y, 0), self.projection_map[face])
             for vertex in verts:
                 glVertex3fv((vertex.x, vertex.y, vertex.z))
         glEnd()
 
     def update_state(self, changes, state):
         """Applies control panel state changes to the renderer.
-
         Args:
             changes (Dict[str, bool]): Flags indicating which parameters changed.
             state (Dict[str, Any]): New values from the GUI controls.
         """
         if changes["project"]:
-            self.camera.reset_view()
+            self.camera.reset_orientation()
 
         self.project = state["project"]
         self.automata_update_interval = state["delay"]
