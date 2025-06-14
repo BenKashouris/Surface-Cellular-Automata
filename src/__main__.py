@@ -89,6 +89,7 @@ class CellularAutomataRenderer:
         self.last_update_time = -math.inf # Force a update asap
 
         mesh = load_obj(os.path.join(assest_root, 'toros10nu10nv0.33r.obj'))
+        print(len(mesh))
         self.automata = automata_engine.Engine(mesh)
         self.projection_map = self.automata.get_projection_map()
 
