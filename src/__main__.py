@@ -3,7 +3,6 @@ from pygame.locals import DOUBLEBUF, OPENGL, QUIT
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from typing import List, Dict, Any
 import os
 
 from file_manager import load_obj, get_file_from_user
@@ -14,6 +13,7 @@ from control_panel import ControlPanel
 # Config ----------------
 DISPLAY_SIZE = (800, 600)
 FRAME_DELAY_MS = 10
+DEFAULT_MESH_FILE = 'toros10nu10nv0.33r.obj'
 
 class App:
     """Main application class that manages the event loop and rendering pipeline."""
@@ -24,7 +24,7 @@ class App:
         pygame.init()
         pygame.display.set_mode(DISPLAY_SIZE, DOUBLEBUF | OPENGL)
 
-        mesh = load_obj(os.path.join(self.assest_root, 'toros10nu10nv0.33r.obj'))
+        mesh = load_obj(os.path.join(self.assest_root, DEFAULT_MESH_FILE))
         print(len(mesh))
 
         self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE)
