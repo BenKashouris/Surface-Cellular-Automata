@@ -6,19 +6,6 @@ from math import sqrt
 
 SQRT3 = sqrt(3)
 
-def get_right(x: Vector3):
-    x = Vector3.normalize(x)
-    up = Vector3(0, 0, 1) if x == Vector3(0, 1, 0) or x == -Vector3(0, -1, 0) else Vector3(0, 1, 0)
-    return Vector3.normalize(Vector3.cross(x, up))
-
-def proj_point(p: Vector3, q: Vector3, n: Vector3):
-    """p: Vector3, the point to be projected \n
-       q: Vector3, a point on the plane \n
-       n: Vector3, the normal of the plane"""
-    v = p - q
-    proj_v = ((v * n) / (n * n)) * n
-    return p - proj_v
-    
 class AutomataCell:
     def __init__(self, face_verts: Tuple[Vector3], *, value: float = 0):
         self.verts = face_verts
@@ -26,8 +13,8 @@ class AutomataCell:
         self.value: float = value
         self.next_value: float = 0
         self.neighbours = []
-        self.centroid = (self.verts[0] + self.verts[1] + self.verts[2]) / 3
-        self.normal = Vector3.cross(self.verts[0] - self.verts[1], self.verts[0] - self.verts[2])
+        # self.centroid = (self.verts[0] + self.verts[1] + self.verts[2]) / 3
+        # self.normal = Vector3.cross(self.verts[0] - self.verts[1], self.verts[0] - self.verts[2])
         self._hash = hash(tuple(map(tuple, self.verts)))
 
     def set_neighbours(self, neighbours: List['AutomataCell']):
@@ -95,11 +82,14 @@ class Engine:
     def get_cells(self):
         return self.cells
     
-    def get_projection_map(self) -> Dict[AutomataCell, Tuple[Vector2, Vector2, Vector2]]:
+    def make_projection_map(self):
         root = self.cells[0]
         tree = self._build_spanning_tree(root)
         self.projection = {root: (Vector2(0, 0), Vector2(0.1, 0), Vector2(0.05, SQRT3/20))}
         self._traverse_and_place(tree, root)
+        return self.projection
+
+    def get_projection_map(self) -> Dict[AutomataCell, Tuple[Vector2, Vector2, Vector2]]:
         return self.projection
     
     def _traverse_and_place(self, tree, current):
@@ -155,3 +145,7 @@ class Engine:
                     visited.add(neighbour)
                     queue.append(neighbour)
         return tree
+    
+    def clear_values(self):
+        for cell in self.cells:
+            cell.value = 0

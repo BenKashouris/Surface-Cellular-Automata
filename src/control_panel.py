@@ -14,8 +14,8 @@ class ControlPanel:
         self.imgui_renderer = PygameRenderer()
         imgui.get_io().ini_file_name = None
 
-        self.changes: Dict[str, bool] = {"project": False, "delay": False, "off_color": False, "on_color": False, "change_mesh": False}
-        self.state: Dict[str, Any] = {"project": True, "delay": 0.5, "on_color": (1, 1, 1), "off_color": (0, 0, 0)}
+        self.changes: Dict[str, bool] = {"project": False, "delay": False, "off_color": False, "on_color": False, "change_mesh": False, "draw_mode": False}
+        self.state: Dict[str, Any] = {"project": True, "delay": 0.5, "on_color": (1, 1, 1), "off_color": (0, 0, 0), "draw_mode": False}
 
     def get_changes(self) -> Dict[str, bool]:
         """Returns flags indicating which control values changed."""
@@ -32,7 +32,12 @@ class ControlPanel:
     def draw(self):
         """Builds, renders and gets states of the ImGui UI window with control widgets."""
         imgui.begin("Controls")
-        self.changes["project"], self.state["project"] = imgui.checkbox("Enable Projection", self.state["project"])
+        self.changes["draw_mode"], self.state["draw_mode"] = imgui.checkbox("Enable Draw Mode", self.state["draw_mode"])
+        if self.state["draw_mode"]:
+            self.changes["project"], self.state["project"] = self.changes["draw_mode"], True
+            imgui.checkbox("Enable Projection", True)
+        else:
+            self.changes["project"], self.state["project"] = imgui.checkbox("Enable Projection", self.state["project"])
         self.changes["delay"], self.state["delay"] = imgui.slider_float("Delay", self.state["delay"], 0.0, 1.5)
         self.changes["off_color"], self.state["off_color"] = imgui.color_edit3("Edit off color", *self.state["off_color"], flags=imgui.COLOR_EDIT_NO_INPUTS)
         self.changes["on_color"], self.state["on_color"] = imgui.color_edit3("Edit on color", *self.state["on_color"], flags=imgui.COLOR_EDIT_NO_INPUTS)

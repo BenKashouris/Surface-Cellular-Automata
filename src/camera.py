@@ -2,6 +2,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from pygame import Vector3
 import math
+from ctypes import POINTER, c_double, c_int
 
 class Camera:
     def __init__(self):
@@ -22,6 +23,28 @@ class Camera:
         """Resets the view."""
         glLoadIdentity()
         glTranslatef(0.0, 0.0, self.distance)
+
+    def screen_coords_to_world_coords(self, x, y, z=0.0):
+        # Get matrices and viewport as NumPy arrays
+        modelview_np = glGetDoublev(GL_MODELVIEW_MATRIX)
+        projection_np = glGetDoublev(GL_PROJECTION_MATRIX)
+        viewport_np = glGetIntegerv(GL_VIEWPORT)
+
+        # Convert all to plain Python lists
+        modelview = modelview_np.flatten().tolist()
+        projection = projection_np.flatten().tolist()
+        viewport = viewport_np.tolist()
+
+        # Flip Y
+        y = viewport[3] - y
+
+        # Now pass floats and lists only
+        world_coords = gluUnProject(
+            float(x), float(y), float(z),
+            modelview, projection, viewport
+        )
+
+        return world_coords
 
 class OrbitalCamera(Camera):
     def __init__(self):

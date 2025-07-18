@@ -17,18 +17,21 @@ DEFAULT_MESH_FILE = 'toros10nu10nv0.33r.obj'
 
 class App:
     """Main application class that manages the event loop and rendering pipeline."""
+    CAPTION = "Surface celluar automata"
     def __init__(self):
+        #self.fix_blurriness()
         self.project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         self.assest_root: str = os.path.join(self.project_root, 'assets')
 
         pygame.init()
         pygame.display.set_mode(DISPLAY_SIZE, DOUBLEBUF | OPENGL)
+        pygame.display.set_caption(self.CAPTION)
 
         mesh = load_obj(os.path.join(self.assest_root, DEFAULT_MESH_FILE))
         print(len(mesh))
 
-        self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE)
-        self.control_panel = ControlPanel() 
+        self.control_panel = ControlPanel()
+        self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE, self.control_panel.get_changes(), self.control_panel.get_state())
 
     def run(self):
         """Runs the main application loop, handling input, updates, and rendering."""
@@ -45,9 +48,10 @@ class App:
 
     def change_automata(self):
         """Prompts the user to select a new `.obj` file and updates the cellular automata renderer."""
-        mesh = load_obj(os.path.join(self.assest_root, get_file_from_user(self.assest_root)))
-        if mesh == "": return #If the user cancels then stop
-        self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE)
+        file_path = get_file_from_user(self.assest_root)
+        if file_path == "": return
+        mesh = load_obj(file_path)
+        self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE, self.control_panel.get_state())
 
     def render(self):
         """Clears the screen and draws the automaton and control panel panel."""
@@ -58,7 +62,7 @@ class App:
         pygame.time.wait(FRAME_DELAY_MS)
 
     def handle_events(self):
-        """Handles window events and delegates UI interaction to the control panel."""
+        """Handles window events and delegates UI interaction to the control panel and camera control to automata renderer"""
         for event in pygame.event.get():
             self.control_panel.handle_event(event)
             if event.type == QUIT:
@@ -68,6 +72,8 @@ class App:
                 self.cellular_automata_renderer.handle_mouse_motion(event.rel, pygame.mouse.get_pressed())
             if event.type == pygame.MOUSEWHEEL:
                 self.cellular_automata_renderer.handle_mouse_wheel(event.y)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self.cellular_automata_renderer.handle_mouse_press(event)
 
     def fix_blurriness(self):
         try:
