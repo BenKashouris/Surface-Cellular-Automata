@@ -5,7 +5,7 @@ from OpenGL.GLU import *
 
 import os
 
-from file_manager import load_obj, get_file_from_user
+from helper_functions import load_obj, get_file_from_user
 from automata_renderer import CellularAutomataRenderer
 from control_panel import ControlPanel
 
@@ -19,7 +19,6 @@ class App:
     """Main application class that manages the event loop and rendering pipeline."""
     CAPTION = "Surface celluar automata"
     def __init__(self):
-        #self.fix_blurriness()
         self.project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         self.assest_root: str = os.path.join(self.project_root, 'assets')
 
@@ -28,7 +27,6 @@ class App:
         pygame.display.set_caption(self.CAPTION)
 
         mesh = load_obj(os.path.join(self.assest_root, DEFAULT_MESH_FILE))
-        print(len(mesh))
 
         self.control_panel = ControlPanel()
         self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE, self.control_panel.get_changes(), self.control_panel.get_state())
@@ -39,6 +37,7 @@ class App:
             self.handle_events()
             self.render()
             self.handle_UI_changes()
+            pygame.time.wait(FRAME_DELAY_MS)
 
     def handle_UI_changes(self):
         """Applies user-changed settings from the UI to the automaton renderer."""
@@ -51,7 +50,8 @@ class App:
         file_path = get_file_from_user(self.assest_root)
         if file_path == "": return
         mesh = load_obj(file_path)
-        self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE, self.control_panel.get_state())
+        print(len(mesh))
+        self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE, self.control_panel.get_changes(), self.control_panel.get_state())
 
     def render(self):
         """Clears the screen and draws the automaton and control panel panel."""
@@ -59,7 +59,6 @@ class App:
         self.cellular_automata_renderer.render()
         self.control_panel.render()
         pygame.display.flip()
-        pygame.time.wait(FRAME_DELAY_MS)
 
     def handle_events(self):
         """Handles window events and delegates UI interaction to the control panel and camera control to automata renderer"""
@@ -74,15 +73,7 @@ class App:
                 self.cellular_automata_renderer.handle_mouse_wheel(event.y)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.cellular_automata_renderer.handle_mouse_press(event)
-
-    def fix_blurriness(self):
-        try:
-            ctypes.windll.shcore.SetProcessDpiAwareness(1)
-        except:
-            try:
-                ctypes.windll.user32.SetProcessDPIAware()
-            except:
-                pass
+                pygame.display.flip()
 
 if __name__ == "__main__":
     app = App()

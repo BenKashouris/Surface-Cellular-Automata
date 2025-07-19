@@ -3,6 +3,7 @@ from pygame import Vector3, Vector2
 import random
 from collections import defaultdict
 from math import sqrt
+from helper_functions import point_in_triangle
 
 SQRT3 = sqrt(3)
 
@@ -149,3 +150,8 @@ class Engine:
     def clear_values(self):
         for cell in self.cells:
             cell.value = 0
+
+    def get_cell_at_pos_in_proj(self, p: Vector2):
+        for cell in self.cells:
+            if point_in_triangle(p, self.projection[cell]):
+                return cell

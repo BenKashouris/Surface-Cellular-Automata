@@ -1,7 +1,7 @@
 import math
 import time
 
-from pygame import Vector3
+from pygame import Vector3, Vector2
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
@@ -85,7 +85,6 @@ class CellularAutomataRenderer:
     def handle_mouse_press(self, event):
         if not self.draw_mode: return
         if event.button == 1:
-            self.get_cell_at_pos(self.camera.screen_coords_to_world_coords(event.pos[0], event.pos[1]))
-
-    def get_cell_at_pos(self, x, y):
-        print(x, y)
+            x, y, z = self.camera.screen_coords_to_world_coords(event.pos[0], event.pos[1])
+            cell = self.automata.get_cell_at_pos_in_proj(Vector2(x, y))
+            if cell: cell.value = not cell.value

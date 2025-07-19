@@ -10,3 +10,5 @@ Add a drawing mode
     Draw little lines to show where faces are /
     Force project mode/
 Add the ability to change the rule
+
+Support for python 3.10 only

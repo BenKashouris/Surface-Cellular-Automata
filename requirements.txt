@@ -1,4 +1,4 @@
 pygame
 PyOpenGL
-imgui[full]
+imgui
 trimesh
