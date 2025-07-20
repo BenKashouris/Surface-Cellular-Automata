@@ -1,14 +1,15 @@
 # Surface-Cellular-Automata
 On Cellular Automata engine on a 3d surface
 
-Validate the object after getting from user
-Remove the need for tri mesh in file_manager.py
+
+Double torus
+Triple torus
+mobius strip 
+klien bottle
+
 Finish Docustrings
-Add a drawing mode
-    Disable updates / and clear the values /
-    Add drawing for values
-    Draw little lines to show where faces are /
-    Force project mode/
+Add the validation for mesh input and a loading screen
 Add the ability to change the rule
+Can we be bothered to thread some stuff
 
 Support for python 3.10 only

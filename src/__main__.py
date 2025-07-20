@@ -13,7 +13,7 @@ from control_panel import ControlPanel
 # Config ----------------
 DISPLAY_SIZE = (800, 600)
 FRAME_DELAY_MS = 10
-DEFAULT_MESH_FILE = 'toros10nu10nv0.33r.obj'
+DEFAULT_MESH_FILE = 'toros_200_faces_0.2_radius.obj'
 
 class App:
     """Main application class that manages the event loop and rendering pipeline."""
