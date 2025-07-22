@@ -5,17 +5,22 @@ from collections import defaultdict
 from math import sqrt
 from helper_functions import point_in_triangle
 
+import time ##debug
+
 SQRT3 = sqrt(3)
 
 class AutomataCell:
-    def __init__(self, face_verts: Tuple[Vector3], *, value: float = 0):
+    def __init__(self, face_verts: Tuple[Vector3], *, value: float = 0, on_rule: Tuple[int, int, int, int], off_rule: Tuple[int, int, int, int]):
         self.verts = face_verts
 
         self.value: float = value
         self.next_value: float = 0
         self.neighbours = []
+        self.on_rule = on_rule
+        self.off_rule = off_rule
         # self.centroid = (self.verts[0] + self.verts[1] + self.verts[2]) / 3
         # self.normal = Vector3.cross(self.verts[0] - self.verts[1], self.verts[0] - self.verts[2])
+
         self._hash = hash(tuple(map(tuple, self.verts)))
 
     def set_neighbours(self, neighbours: List['AutomataCell']):
@@ -24,8 +29,7 @@ class AutomataCell:
 
     def calc_next_value(self):
         n = sum(map(lambda p: p.value, self.neighbours))
-        #self.next_value = (0, 0, self.value, not self.value)[n]
-        self.next_value = (not self.value, 0, 1, not self.value)[n]
+        self.next_value = self.on_rule[n] if self.value else self.off_rule[n]
 
     def update(self):
         self.value = self.next_value
@@ -46,8 +50,8 @@ class AutomataCell:
      
 class Engine:
     """Class response for turning mesh into a Automata"""
-    def __init__(self, mesh):
-        self.cells = [AutomataCell(face, value = random.randint(0, 100) < 70) for face in mesh]
+    def __init__(self, mesh, on_rule: Tuple[int, int, int, int] = (0, 1, 1, 0), off_rule: Tuple[int, int, int, int] = (0, 1, 1, 0)):
+        self.cells = [AutomataCell(face, value = random.randint(0, 100) < 70, on_rule = on_rule, off_rule = off_rule) for face in mesh]
 
         ## Calculating neighbours
         vert_to_cell = defaultdict(list) ## Dictionary that assoicaties a verticies to all the cells that contain it
@@ -155,3 +159,8 @@ class Engine:
         for cell in self.cells:
             if point_in_triangle(p, self.projection[cell]):
                 return cell
+            
+    def set_rule(self, on_rule: Tuple[int, int, int, int], off_rule: Tuple[int, int, int, int]):
+        for cell in self.cells:
+            cell.on_rule = on_rule
+            cell.off_rule = off_rule

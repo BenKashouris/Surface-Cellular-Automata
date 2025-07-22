@@ -1,20 +1,45 @@
 import trimesh
 from pygame import Vector3, Vector2
-from tkinter import filedialog, Tk
+from tkinter import filedialog, Tk, messagebox
 from typing import List, Tuple
+from collections import Counter
 
-def load_obj(file_name: str) -> List[Tuple[Vector3, Vector3, Vector3]]:
-    """Loads an OBJ file and converts it into a list of triangle faces.
+def load_and_validate_obj(file_name: str) -> List[Tuple[Vector3, Vector3, Vector3]]:
+    """
+    Loads an OBJ file and converts it into a list of triangle faces,
+    with strict mesh validation.
+
     Args:
         file_name (str): The path to the OBJ file to load.
+
     Returns:
-        List[tuple[Vector3, Vector3, Vector3]]: A list of faces, where each face
-        is represented as a tuple of three Vector3 objects corresponding to the
-        triangle's vertices.
+        List[Tuple[Vector3, Vector3, Vector3]]: A list of triangle faces.
+
+    Raises:
+        TypeError: If the file is not a trimesh.Trimesh.
+        ValueError: If the mesh is not triangular, not connected,
+                    or has faces with != 3 neighbors.
     """
-    mesh = trimesh.load_mesh(file_name)
-    verts, faces_indexs = mesh.vertices, mesh.faces
-    return [(Vector3(*verts[i]), Vector3(*verts[j]), Vector3(*verts[k])) for i, j, k in faces_indexs]
+    try:
+        mesh = trimesh.load_mesh(file_name)
+    except Exception as e:
+        raise ValueError(f"Failed to load mesh from file '{file_name}': {e}")
+
+    if not isinstance(mesh, trimesh.Trimesh):
+        raise TypeError(f"Loaded object is not a trimesh.Trimesh: got {type(mesh)}")
+
+    if mesh.faces.shape[1] != 3:
+        raise ValueError("Mesh must be triangular (all faces must have 3 vertices)")
+
+    if len(mesh.split(only_watertight=False)) > 1:
+        raise ValueError("Mesh is not connected (it has multiple disconnected components)")
+
+    verts = mesh.vertices
+    faces_indices = mesh.faces
+    return [(Vector3(*verts[i]), Vector3(*verts[j]), Vector3(*verts[k])) for i, j, k in faces_indices]
+
+def error_box(text: str) -> None:
+    messagebox.showerror("Mesh Loading Error", text)
 
 def get_file_from_user(file_path: str) -> str:
     """Opens a file dialog for the user to select a .obj file from the given directory.
@@ -62,5 +87,3 @@ def point_in_triangle(p: Vector2, t: Tuple[Vector2, Vector2, Vector2]) -> bool:
     # Check if point is in triangle
     return (u >= 0) and (v >= 0) and (u + v <= 1)
 
-if __name__ == "__main__":
-    load_obj("C:/Users/benja/Documents/CS - Projects/Surface-Cellular-Automata/assets/Icosphere2.obj")

@@ -16,7 +16,7 @@ class CellularAutomataRenderer:
         self.last_update_time = -math.inf # Force a update asap
         self.update_state(starting_changes, starting_state)
 
-        self.automata = automata_engine.Engine(mesh)
+        self.automata = automata_engine.Engine(mesh, tuple((int(i) for i in starting_state["on_rule"])), tuple((int(i) for i in starting_state["off_rule"])))
         self.automata.make_projection_map()
         self.projection_map = self.automata.get_projection_map()
 

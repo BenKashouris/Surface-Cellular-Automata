@@ -5,7 +5,7 @@ from OpenGL.GLU import *
 
 import os
 
-from helper_functions import load_obj, get_file_from_user
+from helper_functions import load_and_validate_obj, get_file_from_user, error_box
 from automata_renderer import CellularAutomataRenderer
 from control_panel import ControlPanel
 
@@ -26,7 +26,7 @@ class App:
         pygame.display.set_mode(DISPLAY_SIZE, DOUBLEBUF | OPENGL)
         pygame.display.set_caption(self.CAPTION)
 
-        mesh = load_obj(os.path.join(self.assest_root, DEFAULT_MESH_FILE))
+        mesh = load_and_validate_obj(os.path.join(self.assest_root, DEFAULT_MESH_FILE))
 
         self.control_panel = ControlPanel()
         self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE, self.control_panel.get_changes(), self.control_panel.get_state())
@@ -43,14 +43,22 @@ class App:
         """Applies user-changed settings from the UI to the automaton renderer."""
         changes, state = self.control_panel.get_changes(), self.control_panel.get_state()
         if changes["change_mesh"]: self.change_automata()
+        if changes["on_rule"] or changes["off_rule"]:
+            self.cellular_automata_renderer.automata.set_rule(
+                tuple((int(i) for i in state["on_rule"])), 
+                tuple((int(i) for i in state["off_rule"]))
+            )
         self.cellular_automata_renderer.update_state(changes, state)
 
     def change_automata(self):
         """Prompts the user to select a new `.obj` file and updates the cellular automata renderer."""
         file_path = get_file_from_user(self.assest_root)
         if file_path == "": return
-        mesh = load_obj(file_path)
-        print(len(mesh))
+        try:
+            mesh = load_and_validate_obj(file_path)
+        except Exception as e:
+            error_box(e)
+            return
         self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE, self.control_panel.get_changes(), self.control_panel.get_state())
 
     def render(self):
@@ -73,7 +81,6 @@ class App:
                 self.cellular_automata_renderer.handle_mouse_wheel(event.y)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.cellular_automata_renderer.handle_mouse_press(event)
-                pygame.display.flip()
 
 if __name__ == "__main__":
     app = App()
