@@ -1,14 +1,16 @@
 # Surface-Cellular-Automata
-On Cellular Automata engine on a 3d surface
+This project implements a cellular automaton that runs on the surface of a 3D object using OpenGL and ImGui.
+Installation
 
-Add the validation for mesh input and a loading screen
-    3 neighbours
-    connected
-Finish Docustrings
-Add the ability to change the rule
-Speed up?
-    Can we be bothered to thread some stuff
-        - Thread engine initals
-        - work out whats running the ticks so slowly and fix
+    ⚠️ Note: Some versions of Python may not work well with OpenGL. It is recommended to use Python 3.10.11, which is known to be compatible.
 
-Support for python 3.10 only
+Steps
+
+    Clone this repository:
+
+git clone https://github.com/your-username/Surface-Cellular-Automata.git
+cd Surface-Cellular-Automata
+
+Install the required dependencies:
+
+pip install -r requirements.txt

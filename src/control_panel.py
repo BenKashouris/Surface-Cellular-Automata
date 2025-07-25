@@ -15,8 +15,21 @@ class ControlPanel:
         self.imgui_renderer = PygameRenderer()
         imgui.get_io().ini_file_name = None
 
-        self.changes: Dict[str, bool] = {"project": False, "delay": False, "off_color": False, "on_color": False, "change_mesh": False, "draw_mode": False, "on_rule": False, "off_rule": False}
-        self.state: Dict[str, Any] = {"project": True, "delay": 0.5, "on_color": (1, 1, 1), "off_color": (0, 0, 0), "draw_mode": False, "on_rule": "0110", "off_rule": "0011"}
+        self.changes: Dict[str, bool] = {"project": False, 
+                                         "delay": False, 
+                                         "off_color": False, 
+                                         "on_color": False, 
+                                         "change_mesh": False, 
+                                         "draw_mode": False, 
+                                         "on_rule": False, 
+                                         "off_rule": False}
+        self.state: Dict[str, Any] = {"project": True, 
+                                      "delay": 0.5, 
+                                      "on_color": (1, 1, 1), 
+                                      "off_color": (0, 0, 0), 
+                                      "draw_mode": False, 
+                                      "on_rule": "0110", 
+                                      "off_rule": "0011"}
         self.rule_regex: str =  r'^[01]{4}$'
 
     def get_changes(self) -> Dict[str, bool]:
@@ -53,6 +66,7 @@ class ControlPanel:
         imgui.end()
 
     def _change_rule_pop_up(self):
+        """Popup widget to enter new on/off rules using binary strings."""
         imgui.align_text_to_frame_padding()
         imgui.push_item_width(40)
         imgui.text("On Rule: ")

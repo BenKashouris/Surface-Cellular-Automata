@@ -2,12 +2,10 @@ import trimesh
 from pygame import Vector3, Vector2
 from tkinter import filedialog, Tk, messagebox
 from typing import List, Tuple
-from collections import Counter
 
 def load_and_validate_obj(file_name: str) -> List[Tuple[Vector3, Vector3, Vector3]]:
     """
-    Loads an OBJ file and converts it into a list of triangle faces,
-    with strict mesh validation.
+    Loads an OBJ file and converts it into a list of triangle faces, with strict mesh validation.
 
     Args:
         file_name (str): The path to the OBJ file to load.

@@ -13,20 +13,20 @@ from control_panel import ControlPanel
 # Config ----------------
 DISPLAY_SIZE = (800, 600)
 FRAME_DELAY_MS = 10
-DEFAULT_MESH_FILE = 'toros_200_faces_0.2_radius.obj'
+DEFAULT_MESH_FILE = 'Icosphere_320_faces.obj'
 
 class App:
     """Main application class that manages the event loop and rendering pipeline."""
-    CAPTION = "Surface celluar automata"
+    CAPTION = "Surface cellular automata"
     def __init__(self):
         self.project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        self.assest_root: str = os.path.join(self.project_root, 'assets')
+        self.assets_root: str = os.path.join(self.project_root, 'assets')
 
         pygame.init()
         pygame.display.set_mode(DISPLAY_SIZE, DOUBLEBUF | OPENGL)
         pygame.display.set_caption(self.CAPTION)
 
-        mesh = load_and_validate_obj(os.path.join(self.assest_root, DEFAULT_MESH_FILE))
+        mesh = load_and_validate_obj(os.path.join(self.assets_root, DEFAULT_MESH_FILE))
 
         self.control_panel = ControlPanel()
         self.cellular_automata_renderer = CellularAutomataRenderer(mesh, DISPLAY_SIZE, self.control_panel.get_changes(), self.control_panel.get_state())
@@ -52,7 +52,7 @@ class App:
 
     def change_automata(self):
         """Prompts the user to select a new `.obj` file and updates the cellular automata renderer."""
-        file_path = get_file_from_user(self.assest_root)
+        file_path = get_file_from_user(self.assets_root)
         if file_path == "": return
         try:
             mesh = load_and_validate_obj(file_path)
