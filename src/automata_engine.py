@@ -160,10 +160,14 @@ class Engine:
         V_rotated = Vector2.rotate(V, -60 if clockwise else 60)
         return P1 + V_rotated
 
-    def _build_spanning_tree(self, root: AutomataCell):
+    def _build_spanning_tree(self, root: AutomataCell) -> Dict[AutomataCell, List[Tuple[AutomataCell, List[Vector3]]]]:
         """
         Builds a spanning tree from the root cell across the mesh using BFS.
         Used to guide triangle placement in the 2D projection.
+        Parameters:
+            root (AutomataCell): An arbitrary cell that will act as the tree's root 
+        Returns:
+            Dict[AutomataCell, List[Tuple[AutomataCell, List[Vector3]]]]: A mapping between a tree and a list of tuples containing the child AutomataCell and a Vector that is the shared edge in 3D.
         """
         tree: Dict[AutomataCell, List[Tuple[AutomataCell, List[Vector3]]]] = defaultdict(list)
         visited = set()
