@@ -119,40 +119,54 @@ class Engine:
     def get_projection_map(self) -> Dict[AutomataCell, Tuple[Vector2, Vector2, Vector2]]:
         return self.projection
 
-    def _traverse_and_place(self, tree, current):
+    def _traverse_and_place(self, tree, parent_triangle):
         """Recursive function to place each triangle in 2D based on its neighbor and shared edge."""
-        parent_verts_3d = current.get_verts()
-        parent_verts_2d = self.projection[current]
+        # Parent geometry
+        parent_vertices_3d = parent_triangle.get_verts()
+        parent_vertices_2d = self.projection[parent_triangle]
 
-        for child, shared_edge in tree[current]:
-            child_verts_3d = child.get_verts()
+        # Traverse children of this parent
+        for child_triangle, shared_edge_3d in tree[parent_triangle]:
+            child_vertices_3d = child_triangle.get_verts()
 
-            # Find the 2D coordinates of the shared edge
-            i1 = parent_verts_3d.index(shared_edge[0])
-            i2 = parent_verts_3d.index(shared_edge[1])
-            P1, P2 = parent_verts_2d[i1], parent_verts_2d[i2]
+            # --- Step 1: Map the shared edge into 2D ---
+            # Find where the shared vertices sit in the parent’s 2D projection
+            shared_vertex_2d_A = parent_vertices_2d[parent_vertices_3d.index(shared_edge_3d[0])]
+            shared_vertex_2d_B = parent_vertices_2d[parent_vertices_3d.index(shared_edge_3d[1])]
 
-            # Identify the third vertex in 3D
-            third_3d = next(filter(lambda x: x not in shared_edge, child_verts_3d))
-            first_shared_index = child_verts_3d.index(shared_edge[0])
-            third_index = child_verts_3d.index(third_3d)
+            # --- Step 2: Identify the "new" vertex in 3D ---
+            # The third vertex is the one that is NOT part of the shared edge
+            new_vertex_3d = next(v for v in child_vertices_3d if v not in shared_edge_3d)
 
-            # Determine rotation direction based on triangle winding
-            clockwise = (third_index - first_shared_index) % 3 == 1
-            P3 = self._calc_3d_vector(P1, P2, clockwise)
+            # --- Step 3: Use child’s winding order to decide orientation ---
+            # Look at indices in the child triangle’s own ordering
+            idx_first_shared = child_vertices_3d.index(shared_edge_3d[0])
+            idx_new_vertex = child_vertices_3d.index(new_vertex_3d)
 
-            # Assign correct vertex positions for child
-            ordered = [None] * 3
-            for i, v in enumerate(child_verts_3d):
-                if v == shared_edge[0]:
-                    ordered[i] = P1
-                elif v == shared_edge[1]:
-                    ordered[i] = P2
+            # If the new vertex follows the first shared vertex cyclically, 
+            # then place it clockwise relative to the edge in 2D
+            place_clockwise = (idx_new_vertex - idx_first_shared) % 3 == 1
+
+            # Compute new vertex position in 2D
+            new_vertex_2d = self._calc_3d_vector(shared_vertex_2d_A, shared_vertex_2d_B, place_clockwise)
+
+            # --- Step 4: Build the child triangle’s 2D coordinates
+            # Placing verts in 2d in the same order as 3d. Not strictly needed for this function but a best practice.
+            child_vertices_2d = []
+            for vertex in child_vertices_3d:
+                if vertex == shared_edge_3d[0]:
+                    child_vertices_2d.append(shared_vertex_2d_A)
+                elif vertex == shared_edge_3d[1]:
+                    child_vertices_2d.append(shared_vertex_2d_B)
                 else:
-                    ordered[i] = P3
+                    child_vertices_2d.append(new_vertex_2d)
 
-            self.projection[child] = tuple(ordered)
-            self._traverse_and_place(tree, child)
+            # Save 2D placement of this child triangle
+            self.projection[child_triangle] = tuple(child_vertices_2d)
+
+            # --- Step 5: Recurse into child triangle ---
+            self._traverse_and_place(tree, child_triangle)
+
 
     def _calc_3d_vector(self, P1: Vector2, P2: Vector2, clockwise: bool):
         """Rotates vector P2-P1 by ±60 degrees to find the third triangle point in 2D."""
