@@ -1,9 +1,27 @@
 # Surface-Cellular-Automata
-This project implements a cellular automaton that runs on the surface of a 3D object using OpenGL.
+This project implements a cellular automaton running directly on the surface of a 3D object, rendered with OpenGL. <br>
+Each triangle on the mesh is treated as a “cell,” evolving over time according to user-defined rules, with neighbours treated as those with a shared edge.
 
-## Installation
 
-    ⚠️ Note: Some versions of Python may not work well with OpenGL. It is recommended to use Python 3.10.11, which is known to be compatible.
+## ⚡ Features
+Runs cellular automata on swappable 3D meshes. <br>
+Rules and colors are flexible and customizable. <br>
+Project mode: unwraps the 3D mesh into 2D for easier visualization of the automaton.
+
+## 📖 How the Rules Work
+Rules are encoded as a string where each index corresponds to the number of active neighbours.
+
+For example, with a rule string: 
+
+    0101 
+    Index 0 → 0 neighbours → OFF
+    Index 1 → 1 neighbour → ON 
+    Index 2 → 2 neighbours → OFF 
+    Index 3 → 3 neighbours → ON 
+
+## 🛠 Installation
+
+    ⚠️ Note: Some versions of Python may not work well with OpenGL. It is recommended to use Python 3.10.11, which was used for development. 
 
 ### Step 1
 Clone this repository:
@@ -15,3 +33,8 @@ Clone this repository:
 Install the required dependencies:
 
     pip install -r requirements.txt
+
+## 🚀 Usage
+After installation, you can run the program with:
+
+    python __main__.py
