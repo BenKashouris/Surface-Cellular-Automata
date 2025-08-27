@@ -6,7 +6,9 @@ Each triangle on the mesh is treated as a “cell,” evolving over time accordi
 ## ⚡ Features
 Runs cellular automata on swappable 3D meshes. <br>
 Rules and colors are flexible and customizable. <br>
-Project mode: unwraps the 3D mesh into 2D for easier visualization of the automaton.
+Project mode: unwraps the 3D mesh into 2D for easier visualization of the automaton. <br>
+Draw mode: lets you manually set an initial state by activating or deactivating cells before running the automaton.
+
 
 ## 📖 How the Rules Work
 Rules are encoded as a string where each index corresponds to the number of active neighbours.
