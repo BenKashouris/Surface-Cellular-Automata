@@ -129,28 +129,24 @@ class Engine:
         for child_triangle, shared_edge_3d in tree[parent_triangle]:
             child_vertices_3d = child_triangle.get_verts()
 
-            # --- Step 1: Map the shared edge into 2D ---
-            # Find where the shared vertices sit in the parent’s 2D projection
-            shared_vertex_2d_A = parent_vertices_2d[parent_vertices_3d.index(shared_edge_3d[0])]
-            shared_vertex_2d_B = parent_vertices_2d[parent_vertices_3d.index(shared_edge_3d[1])]
-
-            # --- Step 2: Identify the "new" vertex in 3D ---
+            # --- Step 1: Identify the "new" vertex in 3D ---
             # The third vertex is the one that is NOT part of the shared edge
             new_vertex_3d = next(v for v in child_vertices_3d if v not in shared_edge_3d)
 
-            # --- Step 3: Use child’s winding order to decide orientation ---
+            # --- Step 2: Use child’s winding order to decide orientation ---
             # Look at indices in the child triangle’s own ordering
             idx_first_shared = child_vertices_3d.index(shared_edge_3d[0])
             idx_new_vertex = child_vertices_3d.index(new_vertex_3d)
 
-            # If the new vertex follows the first shared vertex cyclically, 
-            # then place it clockwise relative to the edge in 2D
+            # If the new vertex follows the first shared vertex cyclically, then place it clockwise relative to the edge in 2D
             place_clockwise = (idx_new_vertex - idx_first_shared) % 3 == 1
 
             # Compute new vertex position in 2D
+            shared_vertex_2d_A = parent_vertices_2d[parent_vertices_3d.index(shared_edge_3d[0])]
+            shared_vertex_2d_B = parent_vertices_2d[parent_vertices_3d.index(shared_edge_3d[1])]
             new_vertex_2d = self._calc_3d_vector(shared_vertex_2d_A, shared_vertex_2d_B, place_clockwise)
 
-            # --- Step 4: Build the child triangle’s 2D coordinates
+            # --- Step 3: Build the child triangle’s 2D coordinates
             # Placing verts in 2d in the same order as 3d. Not strictly needed for this function but a best practice.
             child_vertices_2d = []
             for vertex in child_vertices_3d:
@@ -161,10 +157,7 @@ class Engine:
                 else:
                     child_vertices_2d.append(new_vertex_2d)
 
-            # Save 2D placement of this child triangle
             self.projection[child_triangle] = tuple(child_vertices_2d)
-
-            # --- Step 5: Recurse into child triangle ---
             self._traverse_and_place(tree, child_triangle)
 
 
