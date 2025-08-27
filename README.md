@@ -39,4 +39,4 @@ Install the required dependencies:
 ## 🚀 Usage
 After installation, you can run the program with:
 
-    python __main__.py
+    python main.py
